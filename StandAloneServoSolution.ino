@@ -1087,7 +1087,7 @@ static const char help_text[] PROGMEM =
 	"Ls      Display a specific servo definition.\r\n"
 	"P       List Pin definitions and assignments.\r\n"
 	"Pp      Display a specific pin definition and assignment.\r\n"
-	"Ns,p,i  Create new servo definition 'a' using pin\r\n"
+	"Ns,p,i  Create new servo definition 's' using pin\r\n"
 	"        'p' to drive the servo and 'i' as the control\r\n"
 	"        input.\r\n"
 	"As,a    Set servo 's' to sweep angle 'a' (0-180).\r\n"
