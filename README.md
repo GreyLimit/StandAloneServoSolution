@@ -1,49 +1,42 @@
 # StandAloneServoSolution
 A free standing Arduino based solution for using Servo motors to operate model railway points (model railroad switches)
 
-Put simply, this code is offered as a simple yet flexible way for people modelling railways to deploy Servo Motor based point motors using a free standing Arduino hardware with minimal additional hardware.
+Put simply, this code is offered as a simple yet flexible way for people modelling railways to deploy Servo Motor based
+point motors using a free standing Arduino hardware with minimal additional hardware.
 
-The Arduino (when loaded with the firmware) is configured using the "Serial Monitor" of the Arduino IDE, or any other Serial Terminal emulation (e.g. minicom).  The configuration can be written to the EEPROM of the Arduino so that, when powered on in isolation, it always loads, verifys and implements the last configuration saved.
+The Arduino (when loaded with the firmware) is configured using the "Serial Monitor" of the Arduino IDE, or any other
+Serial Terminal emulation (e.g. minicom).  The configuration can be written to the EEPROM of the Arduino so that, when
+powered on in isolation, it always loads, verifys and implements the last configuration saved.
 
-The Servo motors are operated using any of the PWM supporting pins on the Arduino.  The state of the Servo is controlled using either a Toggle switch or Momentary switch connected between a specified digital input pin and ground.
+The Servo motors are operated using any of the PWM supporting pins on the Arduino.  The state of the Servo is controlled
+using either a Toggle switch or Momentary switch connected between a specified digital input pin and ground.
 
 The "sweep" angle of the servo can be specified between 0 and 180 degrees, but is always based on a start angle of 0.
 
-Optionally two additional digital pin can be specified and "feedback" output pins, and can be used to light up one of two LEDs indicating which state the servo is current in.
+Optionally two additional digital pin can be specified and "feedback" output pins, and can be used to light up one of
+two LEDs indicating which state the servo is current in.
 
-The firmware supports as many Servos as the Arduino has PWM capable pins (though the Main console TX/RX pin and the on board LED are explicitly excluded).
+The firmware supports as many Servos as the Arduino has PWM capable pins (though the Main console TX/RX pin and the on
+board LED are explicitly excluded).
 
 The following is the output of the 'H'elp command:
 
 ------------------------------------------------------------
 
 Command Summary:  Upper case letter are commands, Lowercase
-
 letters represent numeric values.
 
-
 H       Display this help text.
-
 L       List Servo configuration.
-
 Ls      Display a specific servo definition.
-
 P       List Pin definitions and assignments.
-
 Pp      Display a specific pin definition and assignment.
-
 Ns,p,i  Create new servo definition 's' using pin
-
         'p' to drive the servo and 'i' as the control
-        
         input.
-        
 As,a    Set servo 's' to sweep angle 'a' (0-180).
-
 Ds,s    Delete servo definition 's'.  's' required twice
-
         to reduce chance of accidental use.
-        
 Ts      Set servo 's' to use Toggle (on/off) switching.
 Ms      Set servo 's' to use a momentary switch.
 Fs,a,b  Set servo 's' to provide feedback on pins 'a' and 'b'.
@@ -74,7 +67,8 @@ s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
 
 ------------------------------------------------------------
 
-This creates a Servo called '0', where the motor is connected to PIN 2, the servo sweep has been set to 90 degrees, the controlling switch (a toggle) is on pin 14, and finally, feedback will be provided on pins 15 and 16.
+This creates a Servo called '0', where the motor is connected to PIN 2, the servo sweep has been set to 90 degrees,
+the controlling switch (a toggle) is on pin 14, and finally, feedback will be provided on pins 15 and 16.
 
 The follwoing out shows all Servos defined (command 'L') and all pin associations (command 'P').
 
@@ -168,5 +162,7 @@ p[68] IO Unassigned
 p[69] IO Unassigned
 
 ------------------------------------------------------------
+
+This read me is hardly display as I would like; my fault no doubt.
 
 Jeff/
