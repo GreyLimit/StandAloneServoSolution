@@ -16,20 +16,34 @@ The firmware supports as many Servos as the Arduino has PWM capable pins (though
 The following is the output of the 'H'elp command:
 
 ------------------------------------------------------------
+
 Command Summary:  Upper case letter are commands, Lowercase
+
 letters represent numeric values.
 
+
 H       Display this help text.
+
 L       List Servo configuration.
+
 Ls      Display a specific servo definition.
+
 P       List Pin definitions and assignments.
+
 Pp      Display a specific pin definition and assignment.
+
 Ns,p,i  Create new servo definition 's' using pin
+
         'p' to drive the servo and 'i' as the control
+        
         input.
+        
 As,a    Set servo 's' to sweep angle 'a' (0-180).
+
 Ds,s    Delete servo definition 's'.  's' required twice
+
         to reduce chance of accidental use.
+        
 Ts      Set servo 's' to use Toggle (on/off) switching.
 Ms      Set servo 's' to use a momentary switch.
 Fs,a,b  Set servo 's' to provide feedback on pins 'a' and 'b'.
