@@ -407,8 +407,9 @@ static int servo_state[ AVAILABLE_SERVOS ];
 static int button_state[ AVAILABLE_SERVOS ];
 static int button_count[ AVAILABLE_SERVOS ];
 static int human_input[ AVAILABLE_SERVOS ];
+
 //
-//	Routine used to reset the content of the configuration
+//	Routines used to reset the content of the configuration
 //
 static void reset_servo( SERVO_CONF *ptr ) {
 	ptr->active = false;
@@ -787,7 +788,7 @@ static void adjust_sweep( CONFIGURATION *c, int s, int a ) {
 }
 
 //
-//	Create a new servo device.
+//	Delete a servo device.
 //
 static void delete_servo( CONFIGURATION *c, int s, int x ) {
 	SERVO_CONF	*n;
@@ -848,6 +849,9 @@ static void toggle_switch( CONFIGURATION *c, int s ) {
 	//	Enable Toggle option.
 	//
 	n->toggle = true;
+	button_count[ s ] = 0;
+	button_state[ s ] = false;
+	human_input[ s ] = false;
 	display_progmem( str_done );
 }
 
