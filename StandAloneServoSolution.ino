@@ -493,8 +493,8 @@ static int apply_config( CONFIGURATION *ptr ) {
 			}
 			else {
 				//
-				//	We know that the pin numbers are valid, that each pin is capable
-				//	of the role it is expected to do so now only need to check that
+				//	We know that the pin numbers are valid and that each pin is capable
+				//	of the role it is expected, so now only need to check that
 				//	the pins are unique.  To do this we update the assigned_pin array
 				//	but checking if we suddenly find and entry not set to ERROR.
 				//
