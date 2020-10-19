@@ -16,7 +16,7 @@ using either a Toggle switch or Momentary switch connected between a specified d
 
 The "sweep" angle of the servo can be specified between 0 and 180 degrees, but is always based on a start angle of 0.
 
-Optionally two additional digital pin can be specified and "feedback" output pins, and can be used to light up one of
+Optionally two additional digital pin can be specified as "feedback" output pins, and can be used to light up one of
 two LEDs indicating which state the servo is current in.
 
 The firmware supports as many Servos as the Arduino has PWM capable pins (though the Main console TX/RX pin and the on
