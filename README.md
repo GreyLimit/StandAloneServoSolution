@@ -1,7 +1,5 @@
 # StandAloneServoSolution
 
-[Best viewed in RAW for the time being]
-
 A free standing Arduino based solution for using Servo motors to operate model railway points (model railroad switches)
 
 Put simply, this code is offered as a simple yet flexible way for people modelling railways to deploy Servo Motor based
@@ -24,8 +22,7 @@ board LED are explicitly excluded).
 
 The following is the output of the 'H'elp command:
 
-------------------------------------------------------------
-
+```
 Command Summary:  Upper case letter are commands, Lowercase
 letters represent numeric values.
 
@@ -47,16 +44,13 @@ Qs      Set servo 's' to quiet operation - no feedback.
 W       Write configuration to EEPROM.
 
 This Firmware dated: Oct 16 2020 for Arduino Mega2560.
-
-------------------------------------------------------------
+```
 
 All commands are in UPPER case, all arguments are decimal numeric values separated by commas as appropaite.
 
 The following shows creation of a single servo:
 
-------------------------------------------------------------
-
-
+```
 N0,2,14
 Done.
 A0,90
@@ -67,16 +61,14 @@ F0,15,16
 Done.
 L0
 s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
-
-------------------------------------------------------------
+```
 
 This creates a Servo called '0', where the motor is connected to PIN 2, the servo sweep has been set to 90 degrees,
 the controlling switch (a toggle) is on pin 14, and finally, feedback will be provided on pins 15 and 16.
 
 The following out shows all Servos defined (command 'L') and all pin associations (command 'P').
 
-------------------------------------------------------------
-
+```
 L
 s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
 s[1]: Undefined
@@ -163,9 +155,8 @@ p[66] IO Unassigned
 p[67] IO Unassigned
 p[68] IO Unassigned
 p[69] IO Unassigned
+```
 
-------------------------------------------------------------
-
-This read me is hardly displayed as I would like; my fault, no doubt.
+Readme now formatted *better* but can still be improved.
 
 Jeff.
