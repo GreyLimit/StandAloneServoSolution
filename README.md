@@ -6,7 +6,7 @@ Put simply, this code is offered as a simple yet flexible way for people modelli
 point motors using a free standing Arduino hardware with minimal additional hardware.
 
 The Arduino (when loaded with the firmware) is configured using the "Serial Monitor" of the Arduino IDE, or any other
-Serial Terminal emulation (e.g. minicom).  The configuration can be written to the EEPROM of the Arduino so that, when
+Serial Terminal emulation (e.g. minicom) at 9600 baud.  The configuration can be written to the EEPROM of the Arduino so that, when
 powered on in isolation, it always loads, verifys and implements the last configuration saved.
 
 The Servo motors are operated using any of the PWM supporting pins on the Arduino.  The state of the Servo is controlled
