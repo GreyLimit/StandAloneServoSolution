@@ -73,7 +73,7 @@ s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
 This creates a Servo called '0', where the motor is connected to PIN 2, the servo sweep has been set to 90 degrees,
 the controlling switch (a toggle) is on pin 14, and finally, feedback will be provided on pins 15 and 16.
 
-The follwoing out shows all Servos defined (command 'L') and all pin associations (command 'P').
+The following out shows all Servos defined (command 'L') and all pin associations (command 'P').
 
 ------------------------------------------------------------
 
@@ -166,6 +166,6 @@ p[69] IO Unassigned
 
 ------------------------------------------------------------
 
-This read me is hardly display as I would like; my fault no doubt.
+This read me is hardly displayed as I would like; my fault, no doubt.
 
 Jeff.
