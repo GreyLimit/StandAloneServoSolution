@@ -46,7 +46,7 @@ W       Write configuration to EEPROM.
 This Firmware dated: Oct 16 2020 for Arduino Mega2560.
 ```
 
-All commands are in UPPER case, all arguments are decimal numeric values separated by commas as appropaite.
+All commands are in UPPER case, all arguments are decimal numeric values separated by commas as appropriate.
 
 The following shows creation of a single servo:
 
