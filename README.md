@@ -75,7 +75,7 @@ A0,90
 Done.
 T0
 Done.
-F0,15,16
+FE0,15,16
 Done.
 L0
 s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
@@ -84,7 +84,20 @@ s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
 This creates a Servo called '0', where the motor is connected to PIN 2, the servo sweep has been set to 90 degrees,
 the controlling switch (a toggle) is on pin 14, and finally, feedback will be provided on pins 15 and 16.
 
-The following out shows all Servos defined (command 'L') and all pin associations (command 'P').
+There has been the addition of "realism" modes: Disabled, Point and Signal.
+
+Disabled simply implements the direct motion of the servo arm between two points as fast as the servo can.
+
+Point does the same, but implments a pause (in ms) between each step, so the speed (and noise!) of the servo can be controlled.
+
+Signal tries to recreate the jiggles and bouncing of a semaphore signal in operation.  There are six parameters for this:
+
+Decay, Friction and Gravity affect the "downward" movement of the servo.
+Slack, Stretch and Speed affect the "upward" movement of the servo.
+
+The following output shows all Servos defined (command 'L') and all pin associations (command 'P').
+
+Here another servo definition is shown defined with realism "signal" and a set of parameters associated with mode.
 
 ```
 L
@@ -119,18 +132,6 @@ p[20] IO Unassigned
 p[21] IO Unassigned
 
 ```
-
-There has been the addition of "realism" modes: Disabled, Point and Signal.
-
-Disabled simple implements the direct move of the servo arm between two points as fast as the servo can.
-
-Point does the same, but implments a pause (in ms) between each step, so the speed (and noise!) of the servo can be controlled.
-
-Signal tries to recreate the jigles and bouncing of a semaphore signal in operation.  There are six parameters for this:
-
-Decay, Friction and Gravity affect the "downward" movement of the servo.
-Slack, Stretch and Speed affect the "upward" movement of the servo.
-
 There are still some "corner cases" where the servo doesn't settle, typically when the decay number is small and the integer maths gets stuck in a cycle.  To be looked at at some point.
 
 Readme now formatted *better* but can still be improved.
