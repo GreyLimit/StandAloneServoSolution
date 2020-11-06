@@ -86,14 +86,17 @@ the controlling switch (a toggle) is on pin 14, and finally, feedback will be pr
 
 There has been the addition of "realism" modes: Disabled, Point and Signal.
 
-Disabled simply implements the direct motion of the servo arm between two points as fast as the servo can.
+*       Disabled simply implements the direct motion of the servo arm between two points as fast as the servo can.
 
-Point does the same, but implments a pause (in ms) between each step, so the speed (and noise!) of the servo can be controlled.
+*       Point does the same, but implments a pause (in ms) between each step, so the speed (and noise!) of the servo can be controlled.
 
-Signal tries to recreate the jiggles and bouncing of a semaphore signal in operation.  There are six parameters for this:
+*       Signal tries to recreate the jiggles and bouncing of a semaphore signal in operation.  There are six parameters for this:
 
-Decay, Friction and Gravity affect the "downward" movement of the servo.
-Slack, Stretch and Speed affect the "upward" movement of the servo.
+With repesct to the Signal Realism configuration the following applies:
+
+*       Decay, Friction and Gravity affect the "downward" movement of the servo.  Decay controls the size of the bounce (0 no decay full bounce, 100 no bounce 100% decay).  Friction controls the "speed" of the motion up and down. Gravity selects from one of four tables covering a number of scenarios.
+
+*       Slack, Stretch and Speed affect the "upward" movement of the servo.  Slack controls the size of the initial "blip". Stretch controls the size of the final "jiggle". Speed controls how fast the signal rises.
 
 The following output shows all Servos defined (command 'L') and all pin associations (command 'P').
 
