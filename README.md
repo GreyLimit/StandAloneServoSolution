@@ -23,6 +23,9 @@ board LED are explicitly excluded).
 The following is the output of the 'H'elp command:
 
 ```
+Stand Alone Servo Driver
+------------------------
+
 Command Summary:  Upper case letter are commands, Lowercase
 letters represent numeric values.
 
@@ -35,15 +38,30 @@ Ns,p,i  Create new servo definition 's' using pin
         'p' to drive the servo and 'i' as the control
         input.
 As,a    Set servo 's' to sweep angle 'a' (0-180).
+AN,s    Set servo to normal sweep mode (0->OFF).
+AI,s    Set servo to inverted sweep mode (0->ON).
 Ds,s    Delete servo definition 's'.  's' required twice
         to reduce chance of accidental use.
-Ts      Set servo 's' to use Toggle (on/off) switching.
-Ms      Set servo 's' to use a momentary switch.
-Fs,a,b  Set servo 's' to provide feedback on pins 'a' and 'b'.
-Qs      Set servo 's' to quiet operation - no feedback.
+STs     Set servo 's' to use Toggle (on/off) switching.
+SMs     Set servo 's' to use a Momentary switch.
+FEs,a,b Enable feedback for servo 's' on pins 'a' and 'b'.
+FDs     Disable feedback for servo 's'.
+RDs     Disable realism mode on servo 's'.
+RPs     Enable Point Realism on servo 's'.
+RSs     Enable Signal Realism on servo 's'.
+CPs,p   Configure Point Realism pause on servo 's' to
+        'p'ms between steps.
+CDs,d   Configure Signal Realism decay on servo 's' to 'd'.
+CFs,f   Configure Signal Realism friction on servo 's' to 'f'.
+CLs,l   Configure Signal Realism slack on servo 's' to 'l'.
+CTs,t   Configure Signal Realism stretch on servo 's' to 't'.
+CSs,e   Configure Signal Realism speed on servo 's' to 'e'.
+CGs,g   Configure Signal Realism gravity mode on servo 's' to
+        'g' (0: Linear, 1: Upper, 2: Lower, 3: Full arc).
 W       Write configuration to EEPROM.
 
-This Firmware dated: Oct 16 2020 for Arduino Mega2560.
+This Firmware dated: Nov  6 2020 for Arduino Uno.
+
 ```
 
 All commands are in UPPER case, all arguments are decimal numeric values separated by commas as appropriate.
@@ -70,92 +88,50 @@ The following out shows all Servos defined (command 'L') and all pin association
 
 ```
 L
-s[0]: motor=2,angle=90,input=14/toggle,feedback,a=15,b=16
+s[0]: motor=3,angle=60,input=2/toggle,quiet,signal,decay=70,friction=7,slack=7,stretch=10,speed=90,gravity=0/linear
 s[1]: Undefined
 s[2]: Undefined
 s[3]: Undefined
 s[4]: Undefined
 s[5]: Undefined
-s[6]: Undefined
-s[7]: Undefined
-s[8]: Undefined
-s[9]: Undefined
-s[10]: Undefined
-s[11]: Undefined
-s[12]: Undefined
-s[13]: Undefined
 P
 p[0] Unavailable
 p[1] Unavailable
-p[2] IO PWM -> s[0]
-p[3] IO PWM Unassigned
-p[4] IO PWM Unassigned
+p[2] IO -> s[0]
+p[3] IO PWM -> s[0]
+p[4] IO Unassigned
 p[5] IO PWM Unassigned
 p[6] IO PWM Unassigned
-p[7] IO PWM Unassigned
-p[8] IO PWM Unassigned
+p[7] IO Unassigned
+p[8] IO Unassigned
 p[9] IO PWM Unassigned
 p[10] IO PWM Unassigned
 p[11] IO PWM Unassigned
-p[12] IO PWM Unassigned
+p[12] IO Unassigned
 p[13] Unavailable
-p[14] IO -> s[0]
-p[15] IO -> s[0]
-p[16] IO -> s[0]
+p[14] IO Unassigned
+p[15] IO Unassigned
+p[16] IO Unassigned
 p[17] IO Unassigned
 p[18] IO Unassigned
 p[19] IO Unassigned
 p[20] IO Unassigned
 p[21] IO Unassigned
-p[22] IO Unassigned
-p[23] IO Unassigned
-p[24] IO Unassigned
-p[25] IO Unassigned
-p[26] IO Unassigned
-p[27] IO Unassigned
-p[28] IO Unassigned
-p[29] IO Unassigned
-p[30] IO Unassigned
-p[31] IO Unassigned
-p[32] IO Unassigned
-p[33] IO Unassigned
-p[34] IO Unassigned
-p[35] IO Unassigned
-p[36] IO Unassigned
-p[37] IO Unassigned
-p[38] IO Unassigned
-p[39] IO Unassigned
-p[40] IO Unassigned
-p[41] IO Unassigned
-p[42] IO Unassigned
-p[43] IO Unassigned
-p[44] IO PWM Unassigned
-p[45] IO PWM Unassigned
-p[46] IO PWM Unassigned
-p[47] IO Unassigned
-p[48] IO Unassigned
-p[49] IO Unassigned
-p[50] IO Unassigned
-p[51] IO Unassigned
-p[52] IO Unassigned
-p[53] IO Unassigned
-p[54] IO Unassigned
-p[55] IO Unassigned
-p[56] IO Unassigned
-p[57] IO Unassigned
-p[58] IO Unassigned
-p[59] IO Unassigned
-p[60] IO Unassigned
-p[61] IO Unassigned
-p[62] IO Unassigned
-p[63] IO Unassigned
-p[64] IO Unassigned
-p[65] IO Unassigned
-p[66] IO Unassigned
-p[67] IO Unassigned
-p[68] IO Unassigned
-p[69] IO Unassigned
+
 ```
+
+There has been the addition of "realism" modes: Disabled, Point and Signal.
+
+Disabled simple implements the direct move of the servo arm between two points as fast as the servo can.
+
+Point does the same, but implments a pause (in ms) between each step, so the speed (and noise!) of the servo can be controlled.
+
+Signal tries to recreate the jigles and bouncing of a semaphore signal in operation.  There are six parameters for this:
+
+Decay, Friction and Gravity affect the "downward" movement of the servo.
+Slack, Stretch and Speed affect the "upward" movement of the servo.
+
+There are still some "corner cases" where the servo doesn't settle, typically when the decay number is small and the integer maths gets stuck in a cycle.  To be looked at at some point.
 
 Readme now formatted *better* but can still be improved.
 
