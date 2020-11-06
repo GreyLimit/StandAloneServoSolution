@@ -90,7 +90,7 @@ There has been the addition of "realism" modes: Disabled, Point and Signal.
 
 *       Point does the same, but implments a pause (in ms) between each step, so the speed (and noise!) of the servo can be controlled.
 
-*       Signal tries to recreate the jiggles and bouncing of a semaphore signal in operation.  There are six parameters for this:
+*       Signal tries to recreate the jiggles and bouncing of a semaphore signal in operation.
 
 With repesct to the Signal Realism configuration the following applies:
 
