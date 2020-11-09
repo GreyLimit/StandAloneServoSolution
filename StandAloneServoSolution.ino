@@ -2921,9 +2921,11 @@ static void signal_realism_flip( unsigned long now, RUN_TIME *servo, SERVO_CONF 
 	
 	if(( servo->state == SERVO_OFF )||( servo->state == SERVO_MOVING_OFF )) {
 		servo->index = conf->inverted? SIGNAL_I_ON: SIGNAL_N_ON;
+		servo->state = SERVO_MOVING_ON;
 	}
 	else {
 		servo->index = conf->inverted? SIGNAL_I_OFF: SIGNAL_N_OFF;
+		servo->state = SERVO_MOVING_OFF;
 	}
 }
 
