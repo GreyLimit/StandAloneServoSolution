@@ -49,6 +49,93 @@
 #include <Servo.h>
 
 //
+//	Bring in the pre-generated gravity tables:
+//
+//		linear_gravity[ LINEAR_GRAVITY ] values from 0 to LINEAR_GRAVITY_SCALE
+//		upper_gravity[ UPPER_GRAVITY ] values from 0 to UPPER_GRAVITY_SCALE
+//		lower_gravity[ LOWER_GRAVITY ] values from 0 to LOWER_GRAVITY_SCALE
+//		arc_gravity[ ARC_GRAVITY ] values from 0 to ARC_GRAVITY_SCALE
+//
+//	These map to the time gaps between steps in three different cases:
+//
+//		Linear		A vertical straight line drop.
+//		Upper		From the top of a circle to horizontal.
+//		Lower		From horizontal to the bottom of a circle.
+//		Arc		From vertical up to vertical down.
+//
+//	Use the following defines to turn on/off specific tables:
+//
+//		DEFINE_LINEAR_GRAVITY
+//		DEFINE_UPPER_GRAVITY
+//		DEFINE_LOWER_GRAVITY
+//		DEFINE_ARC_GRAVITY
+//
+#define DEFINE_LINEAR_GRAVITY
+#define DEFINE_UPPER_GRAVITY
+#define DEFINE_LOWER_GRAVITY
+#define DEFINE_ARC_GRAVITY
+//
+//	Include it!
+//
+#include "Gravity.h"
+
+//
+//	Include the "mul_div()" routine for higher speed and
+//	reliable multiplication followed by division without
+//	intermediate overflow (hopefully).
+//
+//	Pertinent for AVR or similar hardware architectures.
+//
+#include "mul_div.h"
+
+//
+//	Define an thin wrapper layer on the Servo library to
+//	enable "sub degree" angular positioning.
+//
+//	The following can be determined for the Servo library
+//	source code.
+//
+//	Servo::write( int value )
+//
+//		When 'value < MIN_PULSE_WIDTH' then value is
+//		assumed to be in degrees, and is range cropped
+//		between (inclusive) 0 and 180.
+//
+//		When 'value >= MIN_PULSE_WIDTH' then value is
+//		the number of microseconds (us) for the pulse
+//		width.
+//
+//	MIN_PULSE_WIDTH
+//
+//		This is the shortest valid pulse width that will
+//		control a servo motor.
+//
+//	MAX_PULSE_WIDTH
+//
+//		This is the longest valid pulse with that will
+//		control a servo motor.
+//
+//	For this wrapper layer the following macros are defined:
+//
+//	ARC_GRANULARITY		How many steps are there from 
+//				MIN_PULSE_WIDTH ("0") to MAX_PULSE_WIDTH
+//				("180")
+//
+//	ARC_TO_DEGREES(v)	Convert an ARC value to the nearest
+//				DEGREE value.
+//
+//	DEGREES_TO_ARC(v)	Convert a Degree value to the
+//				corresponding ARC value.
+//
+//	ARC_TO_PULSE(v)		Convert an ARC value to its matching
+//				pulse width value.
+//
+#define ARC_GRANULARITY		(180*GRAVITY_SUB_STEPS)
+#define ARC_TO_DEGREES(v)	mul_div<unsigned int>((v),180,ARC_GRANULARITY)
+#define DEGREES_TO_ARC(v)	mul_div<unsigned int>((v),ARC_GRANULARITY,180)
+#define ARC_TO_PULSE(v)		(MIN_PULSE_WIDTH+mul_div<unsigned int>((v),(MAX_PULSE_WIDTH-MIN_PULSE_WIDTH),ARC_GRANULARITY))
+
+//
 //	Include the Arduino provided EEPROM access library.
 //
 //	This is used to keep the current configuration of the
@@ -72,6 +159,7 @@
 //	Syntactic sugar for pointer to functions
 //
 #define FUNC(a)		(*(a))
+#define UNUSED(x)	__attribute__((unused)) x
 
 //
 //	Arbitrary debounce count size.
@@ -306,8 +394,6 @@ static int pin_table[ AVAILBLE_PINS ] = {
 //	Define valid ranges (and default values) for a number of the
 //	parametric values used through the firmware.
 //
-#define SWEEP_RANGE		180
-
 #define PAUSE_MIN		0
 #define PAUSE_MAX		1000
 #define PAUSE_DEFAULT		50
@@ -334,37 +420,6 @@ static int pin_table[ AVAILBLE_PINS ] = {
 #define SPEED_MIN		0
 #define SPEED_MAX		100
 #define SPEED_DEFAULT		10
-
-//
-//	Bring in the pre-generated gravity tables:
-//
-//		linear_gravity[ LINEAR_GRAVITY ] values from 0 to LINEAR_GRAVITY_SCALE
-//		upper_gravity[ UPPER_GRAVITY ] values from 0 to UPPER_GRAVITY_SCALE
-//		lower_gravity[ LOWER_GRAVITY ] values from 0 to LOWER_GRAVITY_SCALE
-//		arc_gravity[ ARC_GRAVITY ] values from 0 to ARC_GRAVITY_SCALE
-//
-//	These map to the time gaps between steps in three different cases:
-//
-//		Linear		A vertical straight line drop.
-//		Upper		From the top of a circle to horizontal.
-//		Lower		From horizontal to the bottom of a circle.
-//		Arc		From vertical up to vertical down.
-//
-//	Use the following defines to turn on/off specific tables:
-//
-//		DEFINE_LINEAR_GRAVITY
-//		DEFINE_UPPER_GRAVITY
-//		DEFINE_LOWER_GRAVITY
-//		DEFINE_ARC_GRAVITY
-//
-#define DEFINE_LINEAR_GRAVITY
-#define DEFINE_UPPER_GRAVITY
-#define DEFINE_LOWER_GRAVITY
-#define DEFINE_ARC_GRAVITY
-//
-//	Include it!
-//
-#include "Gravity.h"
 
 //
 //	Define the various "models" of realism which can be implemented
@@ -723,7 +778,7 @@ static int apply_config( CONFIGURATION *ptr ) {
 		run_state[ i ].set_flip = no_realism_flip;
 		run_state[ i ].run_state = no_realism_run;
 		
-		run_state[ i ].acc_table = linear_gravity;
+		run_state[ i ].acc_table = (int *)linear_gravity;
 		run_state[ i ].acc_size = LINEAR_GRAVITY;
 		run_state[ i ].acc_scale = LINEAR_GRAVITY_SCALE;
 		
@@ -847,7 +902,7 @@ static int apply_config( CONFIGURATION *ptr ) {
 					//
 					//	Quick sanity check the sweep angle.
 					//
-					SET_RANGE( ptr->servo[ i ].sweep, 0, SWEEP_RANGE );
+					SET_RANGE( ptr->servo[ i ].sweep, 0, ARC_GRANULARITY );
 					//
 					//	Align state with inverted flag.
 					//
@@ -943,7 +998,7 @@ static int apply_config( CONFIGURATION *ptr ) {
 							//
 							//	Upper quadrant gravity acceleration
 							//
-							run_state[ i ].acc_table = upper_gravity;
+							run_state[ i ].acc_table = (int *)upper_gravity;
 							run_state[ i ].acc_size = UPPER_GRAVITY;
 							run_state[ i ].acc_scale = UPPER_GRAVITY_SCALE;
 							break;
@@ -952,7 +1007,7 @@ static int apply_config( CONFIGURATION *ptr ) {
 							//
 							//	Lower quadrant gravity acceleration
 							//
-							run_state[ i ].acc_table = lower_gravity;
+							run_state[ i ].acc_table = (int *)lower_gravity;
 							run_state[ i ].acc_size = LOWER_GRAVITY;
 							run_state[ i ].acc_scale = LOWER_GRAVITY_SCALE;
 							break;
@@ -961,7 +1016,7 @@ static int apply_config( CONFIGURATION *ptr ) {
 							//
 							//	Full arc gravity acceleration
 							//
-							run_state[ i ].acc_table = arc_gravity;
+							run_state[ i ].acc_table = (int *)arc_gravity;
 							run_state[ i ].acc_size = ARC_GRAVITY;
 							run_state[ i ].acc_scale = ARC_GRAVITY_SCALE;
 							break;
@@ -1069,7 +1124,7 @@ static void display_servo( CONFIGURATION *c, int s ) {
 		display_progmem( str_ds_3 );
 		CONSOLE.print( p->servo );
 		display_progmem( str_ds_4a );
-		CONSOLE.print( p->sweep );
+		CONSOLE.print( ARC_TO_DEGREES( p->sweep ));
 		if( p->inverted ) display_progmem( str_ds_4b );
 		display_progmem( str_ds_5 );
 		CONSOLE.print( p->input );
@@ -1149,7 +1204,7 @@ static const char str_dp_4[] PROGMEM = "]";
 //
 //	Display a specific pin definition.
 //
-static void display_pin( CONFIGURATION *c, int p ) {
+static void display_pin( UNUSED( CONFIGURATION *c ), int p ) {
 	if(( p < 0 )||( p >= AVAILBLE_PINS )) {
 		display_progmem( str_invalid_pin_number );
 		return;
@@ -1237,7 +1292,7 @@ static void create_servo( CONFIGURATION *c, int s, int p, int i ) {
 	
 	n->mode = NO_REALISM;	// Start with no applied realism.
 	
-	r->acc_table = linear_gravity;
+	r->acc_table = (int *)linear_gravity;
 	r->acc_size = LINEAR_GRAVITY;
 	r->acc_scale = LINEAR_GRAVITY_SCALE;
 	
@@ -1270,7 +1325,7 @@ static void adjust_sweep( CONFIGURATION *c, int s, int a ) {
 	//
 	//	Adjust servo sweep angle.
 	//
-	n->sweep = a;
+	n->sweep = DEGREES_TO_ARC( a );
 
 	display_progmem( str_done );
 }
@@ -1606,7 +1661,7 @@ static void enable_signal_realism( CONFIGURATION *c, int s ) {
 	r->set_flip = signal_realism_flip;
 	r->run_state = signal_realism_run;
 
-	r->acc_table = linear_gravity;
+	r->acc_table = (int *)linear_gravity;
 	r->acc_size = LINEAR_GRAVITY;
 	r->acc_scale = LINEAR_GRAVITY_SCALE;
 	
@@ -1849,7 +1904,7 @@ static void set_signal_gravity( CONFIGURATION *c, int s, int g ) {
 			//	Anything else defaults to the default.
 			//
 			n->var.signal.acc = UPPER_ACCEL;
-			r->acc_table = upper_gravity;
+			r->acc_table = (int *)upper_gravity;
 			r->acc_size = UPPER_GRAVITY;
 			r->acc_scale = UPPER_GRAVITY_SCALE;
 			break;
@@ -1859,7 +1914,7 @@ static void set_signal_gravity( CONFIGURATION *c, int s, int g ) {
 			//	Anything else defaults to the default.
 			//
 			n->var.signal.acc = LOWER_ACCEL;
-			r->acc_table = lower_gravity;
+			r->acc_table = (int *)lower_gravity;
 			r->acc_size = LOWER_GRAVITY;
 			r->acc_scale = LOWER_GRAVITY_SCALE;
 			break;
@@ -1869,7 +1924,7 @@ static void set_signal_gravity( CONFIGURATION *c, int s, int g ) {
 			//	Anything else defaults to the default.
 			//
 			n->var.signal.acc = ARC_ACCEL;
-			r->acc_table = arc_gravity;
+			r->acc_table = (int *)arc_gravity;
 			r->acc_size = ARC_GRAVITY;
 			r->acc_scale = ARC_GRAVITY_SCALE;
 			break;
@@ -1879,7 +1934,7 @@ static void set_signal_gravity( CONFIGURATION *c, int s, int g ) {
 			//	Anything else defaults to the default.
 			//
 			n->var.signal.acc = LINEAR_ACCEL;
-			r->acc_table = linear_gravity;
+			r->acc_table = (int *)linear_gravity;
 			r->acc_size = LINEAR_GRAVITY;
 			r->acc_scale = LINEAR_GRAVITY_SCALE;
 			break;
@@ -2427,7 +2482,7 @@ static void default_set_on( RUN_TIME *servo, SERVO_CONF *conf ) {
 	//	at that position.
 	//
 	servo->state = SERVO_ON;
-	servo->driver.write( conf->inverted? 0: conf->sweep );
+	servo->driver.write( ARC_TO_PULSE( conf->inverted? 0: conf->sweep ));
 	if( conf->feedback ) {
 		digitalWrite( conf->output_off, LOW );
 		digitalWrite( conf->output_on, HIGH );
@@ -2440,7 +2495,7 @@ static void default_set_off( RUN_TIME *servo, SERVO_CONF *conf ) {
 	//	at that position.
 	//
 	servo->state = SERVO_OFF;
-	servo->driver.write( conf->inverted? conf->sweep: 0 );
+	servo->driver.write( ARC_TO_PULSE( conf->inverted? conf->sweep: 0 ));
 	if( conf->feedback ) {
 		digitalWrite( conf->output_on, LOW );
 		digitalWrite( conf->output_off, HIGH );
@@ -2450,15 +2505,15 @@ static void default_set_off( RUN_TIME *servo, SERVO_CONF *conf ) {
 //
 //	Routines for the default no realism mode.
 //
-static void no_realism_on( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
+static void no_realism_on( UNUSED( unsigned long now ), RUN_TIME *servo, SERVO_CONF *conf ) {
 	if( servo->state != SERVO_ON ) default_set_on( servo, conf );
 }
 
-static void no_realism_off( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
+static void no_realism_off( UNUSED( unsigned long now ), RUN_TIME *servo, SERVO_CONF *conf ) {
 	if( servo->state != SERVO_OFF ) default_set_off( servo, conf );
 }
 
-static void no_realism_flip( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
+static void no_realism_flip( UNUSED( unsigned long now ), RUN_TIME *servo, SERVO_CONF *conf ) {
 	if( servo->state == SERVO_OFF ) {
 		default_set_on( servo, conf );
 	}
@@ -2467,7 +2522,7 @@ static void no_realism_flip( unsigned long now, RUN_TIME *servo, SERVO_CONF *con
 	}
 }
 
-static void no_realism_run( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
+static void no_realism_run( UNUSED( unsigned long now ), UNUSED( RUN_TIME *servo ), UNUSED( SERVO_CONF *conf )) {
 	//
 	//	Nothing to be done here.
 	//
@@ -2499,7 +2554,7 @@ static void continue_point_on( unsigned long now, RUN_TIME *servo, SERVO_CONF *c
 	if( now > servo->next_event ) {
 		if( conf->inverted ) {
 			if( servo->position > 0 ) {
-				servo->driver.write( servo->position -= 1 );
+				servo->driver.write( ARC_TO_PULSE( servo->position -= 1 ));
 			}
 			else {
 				if( conf->feedback ) digitalWrite( conf->output_on, HIGH );
@@ -2508,7 +2563,7 @@ static void continue_point_on( unsigned long now, RUN_TIME *servo, SERVO_CONF *c
 		}
 		else {
 			if( servo->position < conf->sweep ) {
-				servo->driver.write( servo->position += 1 );
+				servo->driver.write( ARC_TO_PULSE( servo->position += 1 ));
 			}
 			else {
 				if( conf->feedback ) digitalWrite( conf->output_on, HIGH );
@@ -2537,7 +2592,7 @@ static void continue_point_off( unsigned long now, RUN_TIME *servo, SERVO_CONF *
 	if( now > servo->next_event ) {
 		if( conf->inverted ) {
 			if( servo->position < conf->sweep ) {
-				servo->driver.write( servo->position += 1 );
+				servo->driver.write( ARC_TO_PULSE( servo->position += 1 ));
 			}
 			else {
 				if( conf->feedback ) digitalWrite( conf->output_off, HIGH );
@@ -2546,7 +2601,7 @@ static void continue_point_off( unsigned long now, RUN_TIME *servo, SERVO_CONF *
 		}
 		else {
 			if( servo->position > 0 ) {
-				servo->driver.write( servo->position -= 1 );
+				servo->driver.write( ARC_TO_PULSE( servo->position -= 1 ));
 			}
 			else {
 				if( conf->feedback ) digitalWrite( conf->output_off, HIGH );
@@ -2661,26 +2716,6 @@ static void point_realism_run( unsigned long now, RUN_TIME *servo, SERVO_CONF *c
 //
 //
 
-
-//
-//	Numerical scaling routines (possibly macros in future).
-//
-static int scale_int( int v, int t, int b ) {
-	//
-	//	returns ( v * t ) / b
-	//
-	//	Where v * t is possibly larger than v or t can contain
-	//	without overflow
-	//
-	//	This needs to be written in a better fashion.  There must
-	//	be an algorithm for this?
-	//
-	long	x;
-	
-	x = (long)v * (long)t;
-	return( (int)( x / (long) b ));
-}
-
 //
 //	The routine which drives the Signal state machine forwards step-by-step.
 //
@@ -2724,7 +2759,7 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 				servo->index = 3;
 			}
 			else {
-				servo->driver.write( servo->position += servo->fsm_dir );
+				servo->driver.write( ARC_TO_PULSE( servo->position += servo->fsm_dir ));
 			}
 			servo->next_event = now + servo->fsm_speed;
 			break;
@@ -2749,7 +2784,7 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 				if( servo->position == servo->fsm_limit ) servo->fsm_dir = -servo->fsm_dir;
 				servo->position += servo->fsm_dir;
 			}
-			servo->driver.write( servo->position );
+			servo->driver.write( ARC_TO_PULSE( servo->position ));
 			servo->next_event = now + servo->fsm_speed;
 			break;
 		}
@@ -2761,8 +2796,8 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 			REALISM_OUT( "Swing OFF: ", 4 );
 
 			servo->position += servo->fsm_dir;
-			servo->driver.write( servo->position );
-			servo->next_event = now + scale_int( pgm_read_word( servo->acc_table + servo->fsm_speed++ ), conf->var.signal.friction, FRICTION_MAX );
+			servo->driver.write( ARC_TO_PULSE( servo->position ));
+			servo->next_event = now + mul_div<unsigned int>( pgm_read_word( servo->acc_table + servo->fsm_speed++ ), conf->var.signal.friction, FRICTION_MAX );
 			if( servo->fsm_speed >= servo->acc_size ) servo->fsm_speed = servo->acc_size-1;
 			if( servo->position == servo->fsm_target ) servo->index = 5;
 			break;
@@ -2771,12 +2806,12 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 			REALISM_OUT( "Rebound: ", 5 );
 
 			REALISM_OUT( "speed IN: ", servo->fsm_speed );
-			servo->fsm_speed = scale_int( servo->fsm_speed, DECAY_MAX - conf->var.signal.decay, DECAY_MAX );
+			servo->fsm_speed = mul_div<unsigned int>( servo->fsm_speed, DECAY_MAX - conf->var.signal.decay, DECAY_MAX );
 			REALISM_OUT( "speed OUT: ", servo->fsm_speed );
 			if( servo->fsm_speed <= 1 ) {
 				servo->position = servo->fsm_target;
 				servo->state = SERVO_OFF;
-				servo->driver.write( servo->position );
+				servo->driver.write( ARC_TO_PULSE( servo->position ));
 				if( conf->feedback ) digitalWrite( conf->output_off, HIGH );
 				servo->index = 0;
 			}
@@ -2788,12 +2823,12 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 		case 6: {
 			REALISM_OUT( "Swing ON: ", 6 );
 			servo->position -= servo->fsm_dir;
-			servo->driver.write( servo->position );		
+			servo->driver.write( ARC_TO_PULSE( servo->position ));		
 			if( servo->fsm_speed == 0 ) {
 				servo->index = 4;
 			}
 			else {
-				servo->next_event = now + scale_int( pgm_read_word( servo->acc_table + servo->fsm_speed ), conf->var.signal.friction, FRICTION_MAX );
+				servo->next_event = now + mul_div<unsigned int>( pgm_read_word( servo->acc_table + servo->fsm_speed ), conf->var.signal.friction, FRICTION_MAX );
 				servo->fsm_speed -= 1;
 			}
 			break;
@@ -2809,7 +2844,7 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 			servo->fsm_dir = 1;
 			servo->fsm_target = conf->sweep;
 			servo->fsm_limit = conf->sweep - conf->var.signal.stretch;
-			if( servo->position < conf->var.signal.slack ) servo->driver.write( servo->position = conf->var.signal.slack );
+			if( servo->position < conf->var.signal.slack ) servo->driver.write( ARC_TO_PULSE( servo->position = conf->var.signal.slack ));
 			servo->index = SIGNAL_ON;
 			break;
 		}
@@ -2842,7 +2877,7 @@ static void signal_fsm( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
 			servo->fsm_target = 0;
 			servo->fsm_limit = conf->var.signal.stretch;
 			p = conf->sweep - conf->var.signal.slack;
-			if( servo->position > p ) servo->driver.write( servo->position = p );
+			if( servo->position > p ) servo->driver.write( ARC_TO_PULSE( servo->position = p ));
 			servo->index = SIGNAL_ON;
 			break;
 		}
@@ -2916,7 +2951,7 @@ static void signal_realism_off( unsigned long now, RUN_TIME *servo, SERVO_CONF *
 	}
 }
 
-static void signal_realism_flip( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf ) {
+static void signal_realism_flip( UNUSED( unsigned long now ), RUN_TIME *servo, SERVO_CONF *conf ) {
 	REALISM_OUT( "signal_realism_flip: ", servo->state );
 	
 	if(( servo->state == SERVO_OFF )||( servo->state == SERVO_MOVING_OFF )) {
@@ -3095,12 +3130,7 @@ void loop() {
 	//
 	if( now > led_next ) {
 		led_next = now + LED_DELAY;
-		if(( led_state = !led_state )) {
-			digitalWrite( LED_PIN, HIGH );
-		}
-		else {
-			digitalWrite( LED_PIN, LOW );
-		}
+		digitalWrite( LED_PIN, (( led_state = !led_state )? HIGH: LOW ));
 	}
 }
 
