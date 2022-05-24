@@ -1,5 +1,5 @@
 //
-//	StandAloneServoSolution (Version 2)
+//	StandAloneServoSolution (Version 3)
 //
 // 	Version 1/
 //
@@ -12,6 +12,12 @@
 //	Version 1 extended to offer "realistic" operation of signals
 //	in addition operation of points/switches.  The "realism" is
 //	the addition of simulated signal bounce and cable slack/stretch.
+//
+//	Version 3/
+//
+//	Extended to include a mode to enable a servo to be held in its
+//	mid position where this helps with installation or calibration
+//	activities.
 //
 //	Copyright (C) 2020, Jeff Penfold, jeff.penfold@googlemail.com
 //	
@@ -619,6 +625,7 @@ RUN_TIME {
 	//	This is the DRIVER object for this servo.
 	//
 	Servo		driver;
+
 	//
 	//	Pointers to the support routines for this
 	//	servo.  These align to the type of realism
@@ -628,37 +635,44 @@ RUN_TIME {
 	void	FUNC( set_off )( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf );
 	void	FUNC( set_flip )( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf );
 	void	FUNC( run_state )( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf );
+
 	//
 	//	keep tabs on acceleration table being used.
 	//
 	int	*acc_table,		// Pointer to the table in use
 		acc_size,		// Number of entries in the table
 		acc_scale;		// Scale factor used to create the table
+
 	//
 	//	Note the state of the servo.
 	//
 	SERVO_STATE	state;
+	bool		mid_mode;
+
 	//
 	//	When is the next event for this servo?
 	//
 	unsigned long	next_event;
+	
 	//
 	//	Note the servo position and the speed at which
 	//	its position is changing.
 	//
 	int		position,
 			speed;
+
 	//
 	//	For realism modes which are implemented via a finite
 	//	state machine the following variable is provided
 	//	as the "state index" used to drive the actions of
 	//	the code.
 	//
-	//	Note: It is assumed in through this firware that an
+	//	Note: It is assumed through this firmware that an
 	//	index of 0 is a stable "do nothing" position in the
 	//	code.
 	//
 	int		index;
+
 	//
 	//	The following variables are used by the finite state machine
 	//	while simulating signal realism.
@@ -668,6 +682,7 @@ RUN_TIME {
 			fsm_dir,
 			fsm_target,
 			fsm_limit;
+
 	//
 	//	Define the variables which are used to debounce the
 	//	input signals from the switch.
@@ -1048,7 +1063,7 @@ static int apply_config( CONFIGURATION *ptr ) {
 //	effectively static strings.
 //
 static const char str_invalid_servo_number[] PROGMEM = "Invalid servo number.\r\n";
-static const char str_invalid_pin_number[] PROGMEM = "Invalid pin number.\n";
+static const char str_invalid_pin_number[] PROGMEM = "Invalid pin number.\r\n";
 static const char str_invalid_servo_pin_number[] PROGMEM = "Invalid servo pin number.\r\n";
 static const char str_invalid_input_pin_number[] PROGMEM = "Invalid input pin number.\r\n";
 static const char str_invalid_feedback_pin_number[] PROGMEM = "Invalid feedback pin number.\r\n";
@@ -1075,6 +1090,9 @@ static const char str_undefined[] PROGMEM = "Undefined";
 static const char str_unassigned[] PROGMEM = "Unassigned";
 static const char str_io[] PROGMEM = "IO ";
 static const char str_pwm[] PROGMEM = "PWM ";
+static const char str_mid_mode[] PROGMEM = "Middle holding mode: ";
+static const char str_on[] PROGMEM = "ON\r\n";
+static const char str_off[] PROGMEM = "OFF\r\n";
 static const char str_cr_lf[] PROGMEM = "\r\n";
 
 
@@ -1291,6 +1309,8 @@ static void create_servo( CONFIGURATION *c, int s, int p, int i ) {
 	n->output_on = ERROR;
 	
 	n->mode = NO_REALISM;	// Start with no applied realism.
+
+	r->mid_mode = false;	// Never start with the servo in "mid mode".
 	
 	r->acc_table = (int *)linear_gravity;
 	r->acc_size = LINEAR_GRAVITY;
@@ -1354,6 +1374,31 @@ static void adjust_invert( CONFIGURATION *c, int s, int i ) {
 }
 
 //
+//	Toggle mid mode
+//
+static void adjust_mid_mode( CONFIGURATION *c, int s ) {
+	SERVO_CONF	*n;
+	RUN_TIME	*r;
+	
+	if(( s < 0 )||( s >= AVAILABLE_SERVOS )) {
+		display_progmem( str_invalid_servo_number );
+		return;
+	}
+	n = &( c->servo[ s ]);
+	if( !n->active ) {
+		display_progmem( str_servo_not_defined );
+		return;
+	}
+	//
+	//	Toggle the runtime mid-mode flag
+	//
+	r = &( run_state[ s ]);
+	display_progmem( str_mid_mode );
+	display_progmem(( r->mid_mode = !r->mid_mode )? str_on: str_off );
+}
+
+
+//
 //	Delete a servo device.
 //
 static void delete_servo( CONFIGURATION *c, int s, int x ) {
@@ -1398,6 +1443,8 @@ static void delete_servo( CONFIGURATION *c, int s, int x ) {
 	n->output_off = ERROR;
 	n->output_on = ERROR;
 	n->mode = NO_REALISM;
+
+	r->mid_mode = false;
 
 	display_progmem( str_done );
 }
@@ -2101,6 +2148,9 @@ static const char help_text[] PROGMEM =
 	"As,a    Set servo 's' to sweep angle 'a' (0-180).\r\n"
 	"AN,s    Set servo to normal sweep mode (0->OFF).\r\n"
 	"AI,s    Set servo to inverted sweep mode (0->ON).\r\n"
+	"\r\n"
+	"Ms      Toggle Servo in/out of 'mid-point' mode."
+	"\r\n"
 	"Ds,s    Delete servo definition 's'.  's' required twice\r\n"
 	"        to reduce chance of accidental use.\r\n"
 	"STs     Set servo 's' to use Toggle (on/off) switching.\r\n"
@@ -2182,6 +2232,17 @@ static void process_command( EEPROM_DATA *conf, char *input ) {
 					goto ehh;
 				}
 			}
+			break;
+		}
+		case 'M': {
+			//
+			//	Toggle the mid mode for a specified servo.
+			//
+			if( args != 1 ) goto ehh;
+			//
+			//	Toggle mid mode...
+			//
+			adjust_mid_mode( &( conf->var.data ), arg[ 0 ]);
 			break;
 		}
 		case 'N': {
@@ -2990,6 +3051,14 @@ static void service_servo( unsigned long now, RUN_TIME *servo, SERVO_CONF *conf 
 	//
 	if( !conf->active ) return;
 	//
+	//	Are we in "mid mode", if so then just tell the servo to
+	//	be in its central position.
+	//
+	if( servo->mid_mode ) {
+		servo->driver.write( ARC_TO_PULSE( conf->sweep >> 1 ));
+		return;
+	}
+	//
 	//	First action is to read the input pin and debounce the
 	//	reply to establish effective value of the switch.
 	//
@@ -3109,6 +3178,7 @@ void loop() {
 	//	Make a note of the time now.
 	//
 	now = millis();
+
 	//
 	//	Before getting into the nitty-gritty servo stuff, is there
 	//	some console input?
